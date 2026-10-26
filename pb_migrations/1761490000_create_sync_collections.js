@@ -3,6 +3,7 @@ migrate((db) => {
   const names = ['sf_tasks','sf_schedule','sf_exams','sf_events','sf_library_items','sf_library_folders','sf_decks','sf_cards','sf_focus_sessions','sf_pdf_notes','sf_meta']
   const users = dao.findCollectionByNameOrId('_pb_users_auth_')
   for (const name of names) {
+    try { dao.findCollectionByNameOrId(name); continue } catch {}
     const collection = new Collection({
       type: 'base',
       name: name,

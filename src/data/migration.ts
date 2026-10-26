@@ -17,8 +17,8 @@ import { studyPrefix } from '../pdfReaderModel'
 // studyPrefix defined in pdfReaderModel
 
 const coreMigrationKey = META_KEYS.migration
-const studyMigrationKey = 'migration:study:v1'
-const pdfMigrationKey = 'migration:pdf:v1'
+export const studyMigrationKey = 'migration:study:v1'
+export const pdfMigrationKey = 'migration:pdf:v1'
 
 function safeParse<T>(raw: string | null, fallback: T): T {
   if (raw === null) return fallback

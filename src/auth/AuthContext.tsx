@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { pb } from '../lib/pocketbase'
+import { clearLocalData } from '../data/db'
+import { syncPushAll } from '../data/sync'
 
 type AuthCtx = {
   user: any
@@ -8,7 +10,7 @@ type AuthCtx = {
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, passwordConfirm: string, name?: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   refresh: () => Promise<void>
 }
 
@@ -21,13 +23,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    setIsLoading(false)
     const unsub = pb.authStore.onChange(() => {
       setUser(pb.authStore.model)
       setToken(pb.authStore.token)
       setIsValid(pb.authStore.isValid)
     })
+    let active = true
+    void (async () => {
+      // Revalidăm sesiunea salvată la pornire, altfel un token expirat pare valid.
+      if (pb.authStore.isValid) {
+        try {
+          await pb.collection('users').authRefresh()
+        } catch {}
+      }
+      if (active) setIsLoading(false)
+    })()
     return () => {
+      active = false
       if (typeof unsub === 'function') unsub()
     }
   }, [])
@@ -46,8 +58,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await pb.collection('users').authWithPassword(email, password)
   }
 
-  function logout() {
+  async function logout() {
+    // Împinge datele contului curent înainte să ștergem localul, ca să nu piardă nimic.
+    try { await syncPushAll() } catch {}
     pb.authStore.clear()
+    await clearLocalData()
+    window.location.reload()
   }
 
   async function refresh() {

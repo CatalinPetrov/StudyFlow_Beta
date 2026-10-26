@@ -6,6 +6,22 @@ import App from './App'
 
 vi.mock('./PdfReader', () => ({ PdfReader: () => null }))
 
+const mockAuthState = vi.hoisted(() => ({ isValid: true, isLoading: false }))
+
+vi.mock('./auth/AuthContext', () => ({
+  AuthProvider: ({ children }: { children: unknown }) => <>{children as never}</>,
+  useAuth: () => ({
+    user: { id: 'test-user', email: 'test@example.com' },
+    token: 'test-token',
+    isValid: mockAuthState.isValid,
+    isLoading: mockAuthState.isLoading,
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}))
+
 function renderApp(path = '/') {
   return render(
     <MemoryRouter initialEntries={[path]}>
@@ -37,6 +53,16 @@ describe('App routes', () => {
 
     await user.click(screen.getAllByRole('button', { name: /Deschide profilul/ })[0])
     expect(await screen.findByRole('heading', { name: 'Profil și setări', level: 1 })).toBeInTheDocument()
+  })
+
+  it('shows the login page when logged out', async () => {
+    mockAuthState.isValid = false
+    try {
+      renderApp()
+      expect(await screen.findByRole('heading', { name: 'Conectare' })).toBeInTheDocument()
+    } finally {
+      mockAuthState.isValid = true
+    }
   })
 
   it('applies and updates the theme preference', async () => {

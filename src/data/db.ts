@@ -92,6 +92,38 @@ export async function setMeta(key: string, value: unknown): Promise<void> {
   await db.meta.put({ key, value })
 }
 
+export const LAST_USER_ID_KEY = 'studyflow-last-user-id'
+const PRESERVED_LOCAL_KEYS = ['studyflow-theme', LAST_USER_ID_KEY]
+
+// Șterge toate datele locale ale contului curent (Dexie + localStorage studyflow-*).
+// Se folosește la logout și la schimbarea contului, ca datele a doi utilizatori
+// să nu se unească pe același browser. Tema și ultimul user rămân.
+export async function clearLocalData(): Promise<void> {
+  try {
+    await db.transaction(
+      'rw',
+      [db.meta, db.tasks, db.schedule, db.exams, db.events, db.libraryItems, db.libraryFolders, db.files, db.decks, db.cards, db.focusSessions, db.pdfNotes],
+      async () => {
+        await Promise.all([db.meta, db.tasks, db.schedule, db.exams, db.events, db.libraryItems, db.libraryFolders, db.files, db.decks, db.cards, db.focusSessions, db.pdfNotes].map(table => table.clear()))
+      },
+    )
+  } catch {}
+  try {
+    const preserved: Record<string, string> = {}
+    for (const key of PRESERVED_LOCAL_KEYS) {
+      const value = localStorage.getItem(key)
+      if (value !== null) preserved[key] = value
+    }
+    const doomed: string[] = []
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i)
+      if (key?.startsWith('studyflow-')) doomed.push(key)
+    }
+    doomed.forEach(key => localStorage.removeItem(key))
+    Object.entries(preserved).forEach(([key, value]) => localStorage.setItem(key, value))
+  } catch {}
+}
+
 export function replaceTable<T, K extends IndexableType>(table: Table<T, K>, rows: T[]): Promise<void> {
   const queueKey = table as unknown as Table<unknown, IndexableType>
   const queue = writeQueues.get(queueKey) ?? Promise.resolve()

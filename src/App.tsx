@@ -1,6 +1,6 @@
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
-import { lazy, Suspense, useCallback, useEffect, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PlanTasks, TaskDetails, TaskEditor } from './PlanTasks'
 import { weekTasks, type StudyTask, type TaskDraft, type TaskStatus } from './taskModel'
@@ -17,8 +17,8 @@ import { loadUserSettings, cleanSettings, initialsFor, firstName, type UserSetti
 import { buildNotifications, loadReadIds, type StudyNotification } from './notificationModel'
 import { loadLibraryItems, loadLibraryFolders, type LibraryItem, type LibraryFolder, type LibrarySection } from './libraryModel'
 import { currentSemester, loadAcademicState, normalizedSubject, tagLegacyRecord, type Subject } from './academicModel'
-import { META_KEYS, saveEvents, saveExams, saveLibraryFolders, saveLibraryItems, saveSchedule, saveTasks, setMeta } from './data/db'
-import { initializePdfNotesData, initializeStudyFlowData, initializeStudyHubData } from './data/migration'
+import { LAST_USER_ID_KEY, META_KEYS, clearLocalData, saveEvents, saveExams, saveLibraryFolders, saveLibraryItems, saveSchedule, saveTasks, setMeta } from './data/db'
+import { initializePdfNotesData, initializeStudyFlowData, initializeStudyHubData, pdfMigrationKey, studyMigrationKey } from './data/migration'
 import { primePdfNotes } from './pdfReaderModelDexie'
 import { db } from './data/db'
 import { AppShell } from './components/layout/AppShell'
@@ -27,6 +27,8 @@ import { DialogSurface } from './components/ui/DialogSurface'
 import { pageFromPath, pagePaths, type PageId } from './lib/navigation'
 import { applyTheme, getThemePreference, saveThemePreference, type ThemePreference } from './lib/theme'
 import { requestPersistentStorage, storageErrorMessage } from './lib/storage'
+import { useAuth } from './auth/AuthContext'
+import { syncAll, syncPushAll } from './data/sync'
 
 type IconProps = { className?: string }
 const svg = (children: ReactNode) =>
@@ -480,6 +482,13 @@ export default function App() {
     window.scrollTo({ top: 0 })
   }, [location.pathname, navigateTo])
   useEffect(() => { window.scrollTo({ top: 0 }) }, [location.pathname])
+  const { user: authUser, isValid: isLoggedIn, isLoading: authLoading } = useAuth()
+  const isAuthPage = page === 'auth-login' || page === 'auth-register'
+  useEffect(() => {
+    if (authLoading) return
+    if (!isLoggedIn && !isAuthPage) navigateTo('/auth/login')
+    else if (isLoggedIn && isAuthPage) navigateTo('/')
+  }, [authLoading, isLoggedIn, isAuthPage, navigateTo])
   const [clock, setClock] = useState(() => new Date())
   const [themePreference,setThemePreference]=useState<ThemePreference>(getThemePreference)
   const [userSettings,setUserSettings]=useState(loadUserSettings)
@@ -567,6 +576,58 @@ export default function App() {
   useEffect(() => {
     if (dataReady) void requestPersistentStorage()
   }, [dataReady])
+
+  const lastSyncedUserId = useRef<string | null>(null)
+  useEffect(() => {
+    const userId = (authUser as any)?.id ?? null
+    if (!dataReady || !isLoggedIn || !userId || lastSyncedUserId.current === userId) return
+    lastSyncedUserId.current = userId
+    void (async () => {
+      try {
+        let previousUserId: string | null = null
+        try { previousUserId = localStorage.getItem(LAST_USER_ID_KEY) } catch {}
+        // Cont diferit de ultimul de pe acest browser: pornim de la local gol,
+        // ca datele vechiului cont să nu se unească cu cele noi.
+        // shortcut: trecerea directă la alt cont fără logout pierde modificările locale nesincronizate ale vechiului cont.
+        if (previousUserId && previousUserId !== userId) await clearLocalData()
+        try { localStorage.setItem(LAST_USER_ID_KEY, userId) } catch {}
+        // Mai întâi tragem din cloud: un dispozitiv nou nu trebuie să suprascrie serverul cu gol.
+        await syncAll()
+        // Marchează migrările ca făcute: init-urile trebuie să citească Dexie (proaspăt tras), nu localStorage.
+        const stamp = { version: 1, migratedAt: new Date().toISOString() }
+        await db.transaction('rw', db.meta, async () => {
+          await db.meta.put({ key: META_KEYS.migration, value: stamp })
+          await db.meta.put({ key: studyMigrationKey, value: stamp })
+          await db.meta.put({ key: pdfMigrationKey, value: stamp })
+        })
+        let snapshot = (await initializeStudyFlowData()).snapshot
+        if (!snapshot.academics || !snapshot.userSettings) {
+          // Cont nou, fără nimic pe server: reconstruiește defaulturile via migrarea din localul gol.
+          await db.transaction('rw', db.meta, async () => {
+            await db.meta.delete(META_KEYS.migration)
+            await db.meta.delete(studyMigrationKey)
+            await db.meta.delete(pdfMigrationKey)
+          })
+          snapshot = (await initializeStudyFlowData()).snapshot
+        }
+        setTasks(snapshot.tasks)
+        setAcademics(snapshot.academics)
+        setScheduleEntries(snapshot.schedule)
+        setExams(snapshot.exams)
+        setEvents(snapshot.events)
+        setLibraryItems(snapshot.libraryItems)
+        setLibraryFolders(snapshot.libraryFolders)
+        setUserSettings(snapshot.userSettings)
+        setReadNotificationIds(snapshot.readNotificationIds)
+        const { notes } = await initializePdfNotesData()
+        primePdfNotes(notes)
+        // Urmează push cu Dexie-ul reunit (local + cloud), ca datele pre-login să ajungă pe server.
+        persist(syncPushAll())
+      } catch (error) {
+        console.error('Sincronizarea inițială StudyFlow a eșuat.', error)
+      }
+    })()
+  }, [dataReady, isLoggedIn, authUser, persist])
 
   useEffect(() => {
     applyTheme(themePreference)
@@ -699,7 +760,7 @@ export default function App() {
   const nearDate = dateKey(new Date(clock.getFullYear(), clock.getMonth(), clock.getDate() + 3))
   const upcoming = tasks.filter((t) => !t.done && t.dueDate >= todayKey && t.dueDate <= nearDate).length
 
-  if (!dataReady) {
+  if (!dataReady || authLoading) {
     return (
       <div className="grid min-h-screen place-items-center bg-canvas px-6">
         <div className="text-center">
@@ -711,6 +772,14 @@ export default function App() {
           <p className="mt-4 text-sm font-medium text-ink-soft">Se pregătesc datele StudyFlow…</p>
         </div>
       </div>
+    )
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        {page === 'auth-register' ? <RegisterPage /> : <LoginPage />}
+      </Suspense>
     )
   }
 

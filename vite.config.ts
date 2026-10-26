@@ -73,6 +73,8 @@ export default defineConfig({
   server: {
     host: true,
     port: Number(process.env.PORT || 5173),
+    // PocketBase scrie în pb_data/ la fiecare request; fără asta Vite reîncarcă pagina la fiecare scriere.
+    watch: { ignored: ['**/pb_data/**', '**/dist/**', '**/test_sync.sqlite*'] },
   },
   preview: {
     host: true,
