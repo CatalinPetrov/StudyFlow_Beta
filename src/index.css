@@ -1,0 +1,186 @@
+@import '@fontsource-variable/inter';
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+
+  --color-canvas: #f5f5f7;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-surface-muted: #f1f1f3;
+  --color-surface-hover: #e8e8ec;
+  --color-ink: #1d1d1f;
+  --color-ink-soft: #626269;
+  --color-ink-faint: #6e6e73;
+  --color-brand: #0071e3;
+  --color-brand-text: #0069d6;
+  --color-brand-deep: #0a5fc0;
+  --color-brand-soft: #e8f2ff;
+  --color-line: rgb(0 0 0 / 0.07);
+  --color-line-strong: rgb(0 0 0 / 0.12);
+  --color-danger: #c9241a;
+  --color-success: #248a3d;
+  --color-warning: #9a5b00;
+
+  --radius-card: 1.5rem;
+  --radius-control: 0.875rem;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.035), 0 10px 34px rgb(0 0 0 / 0.055);
+  --shadow-float: 0 12px 40px rgb(0 0 0 / 0.14);
+  --shadow-brand: 0 10px 26px rgb(0 113 227 / 0.32);
+
+  --ease-apple: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    --app-bg: var(--color-canvas);
+    --app-surface: var(--color-surface);
+    --app-line: var(--color-line);
+    --app-ink: var(--color-ink);
+    --app-ink-soft: var(--color-ink-soft);
+  }
+
+  [data-theme='dark'] {
+    color-scheme: dark;
+    --app-bg: #0b0b0c;
+    --app-surface: #161618;
+    --app-line: rgb(255 255 255 / 0.1);
+    --app-ink: #f5f5f7;
+    --app-ink-soft: #a1a1a6;
+    --color-canvas: #0b0b0c;
+    --color-surface: #161618;
+    --color-surface-raised: #1d1d1f;
+    --color-surface-muted: #1c1c1e;
+    --color-surface-hover: #2c2c2e;
+    --color-ink: #f5f5f7;
+    --color-ink-soft: #a1a1a6;
+    --color-ink-faint: #8e8e93;
+    --color-brand: #0b72e0;
+    --color-brand-text: #55a7ff;
+    --color-brand-deep: #0a63c2;
+    --color-brand-soft: #0b2038;
+    --color-line: rgb(255 255 255 / 0.1);
+    --color-line-strong: rgb(255 255 255 / 0.18);
+    --color-danger: #ff6961;
+    --color-success: #30d158;
+    --color-warning: #ffb340;
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 38px rgb(0 0 0 / 0.28);
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    background: var(--app-bg);
+  }
+
+  body {
+    min-width: 320px;
+    margin: 0;
+    background: var(--app-bg);
+    color: var(--app-ink);
+    font-family: var(--font-sans);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    outline-color: var(--color-brand);
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  ::selection {
+    background: rgb(0 113 227 / 0.2);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      scroll-behavior: auto !important;
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 9999;
+    transform: translateY(-160%);
+    border-radius: 0.75rem;
+    background: var(--color-ink);
+    color: var(--color-canvas);
+    padding: 0.65rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: transform 180ms var(--ease-apple);
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  .surface-card {
+    border: 1px solid var(--app-line);
+    border-radius: var(--radius-card);
+    background: var(--app-surface);
+    box-shadow: var(--shadow-card);
+  }
+
+  .glass-nav {
+    border: 1px solid var(--app-line);
+    background: color-mix(in srgb, var(--app-surface) 78%, transparent);
+    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+  }
+
+  .pressable {
+    transition:
+      transform 180ms var(--ease-apple),
+      background-color 180ms var(--ease-apple),
+      box-shadow 180ms var(--ease-apple);
+  }
+
+  .pressable:active {
+    transform: scale(0.97);
+  }
+}
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-theme='light'] {
+    color-scheme: light;
+  }
+}

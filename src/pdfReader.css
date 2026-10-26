@@ -1,0 +1,10 @@
+/* Scopes the StudyFlow reader UI. The text layer layout itself comes from
+   pdfjs-dist/web/pdf_viewer.css matching the installed PDF.js version. */
+.sf-reader { color: #1d1d1f; font-family: Inter, -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; }
+.sf-reader .sf-reader-scroll { overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #c5c6ce transparent; }
+.sf-reader .sf-pdf-sheet { box-sizing: content-box; }
+.sf-reader .textLayer { inset: 0; overflow: hidden; text-align: initial; opacity: 1; }
+.sf-reader .textLayer ::selection { background: rgba(0,113,227,.28); }
+.sf-reader .textLayer span::selection { background: rgba(0,113,227,.28); }
+.sf-reader button { -webkit-tap-highlight-color: transparent; }
+.sf-reader :focus-visible { outline: 2px solid rgba(0,113,227,.65); outline-offset: 2px; }

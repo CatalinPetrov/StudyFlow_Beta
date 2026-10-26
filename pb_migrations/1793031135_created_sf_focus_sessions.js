@@ -1,0 +1,43 @@
+/// <reference path="../pb_data/types.d.ts" />
+migrate((db) => {
+  const collection = new Collection({
+    "id": "3dx2fdr4ynm5wtq",
+    "created": "2026-10-26 16:12:15.247Z",
+    "updated": "2026-10-26 16:12:15.247Z",
+    "name": "sf_focus_sessions",
+    "type": "base",
+    "system": false,
+    "schema": [
+      {
+        "system": false,
+        "id": "wwvq0drc",
+        "name": "user",
+        "type": "relation",
+        "required": false,
+        "presentable": false,
+        "unique": false,
+        "options": {
+          "collectionId": "_pb_users_auth_",
+          "cascadeDelete": false,
+          "minSelect": null,
+          "maxSelect": 1,
+          "displayFields": null
+        }
+      }
+    ],
+    "indexes": [],
+    "listRule": "@request.auth.id != \"\" && user = @request.auth.id",
+    "viewRule": "@request.auth.id != \"\" && user = @request.auth.id",
+    "createRule": "@request.auth.id != \"\" && user = @request.auth.id",
+    "updateRule": "@request.auth.id != \"\" && user = @request.auth.id",
+    "deleteRule": "@request.auth.id != \"\" && user = @request.auth.id",
+    "options": {}
+  });
+
+  return Dao(db).saveCollection(collection);
+}, (db) => {
+  const dao = new Dao(db);
+  const collection = dao.findCollectionByNameOrId("3dx2fdr4ynm5wtq");
+
+  return dao.deleteCollection(collection);
+})
