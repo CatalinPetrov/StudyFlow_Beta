@@ -59,11 +59,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function logout() {
-    // Împinge datele contului curent înainte să ștergem localul, ca să nu piardă nimic.
-    try { await syncPushAll() } catch {}
-    pb.authStore.clear()
-    await clearLocalData()
-    window.location.reload()
+    // Push-ul face câte un request per rând și poate dura mult; nu blocăm delogarea la nesfârșit.
+    // Restul se sincronizează la următorul login (pull, apoi push).
+    try {
+      await Promise.race([syncPushAll(), new Promise(resolve => setTimeout(resolve, 8000))])
+    } catch {}
+    try {
+      pb.authStore.clear()
+      await clearLocalData()
+    } finally {
+      window.location.reload()
+    }
   }
 
   async function refresh() {

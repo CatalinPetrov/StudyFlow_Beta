@@ -10,16 +10,17 @@ type Props = {
   onNavigate: (page: PageId) => void
   onAdd: () => void
   onProfile: () => void
+  onLogout: () => void
   children: ReactNode
 }
 
-export function AppShell({ page, user, onNavigate, onAdd, onProfile, children }: Props) {
+export function AppShell({ page, user, onNavigate, onAdd, onProfile, onLogout, children }: Props) {
   return (
     <div className="min-h-screen">
       <a className="skip-link" href="#main-content">
         Sari la conținut
       </a>
-      <AppSidebar page={page} user={user} onNavigate={onNavigate} onAdd={onAdd} onProfile={onProfile} />
+      <AppSidebar page={page} user={user} onNavigate={onNavigate} onAdd={onAdd} onProfile={onProfile} onLogout={onLogout} />
       <main
         id="main-content"
         tabIndex={-1}

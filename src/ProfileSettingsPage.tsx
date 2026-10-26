@@ -44,6 +44,7 @@ async function prepareAvatar(file:File):Promise<string> {
 export function ProfileSettingsPage({settings,tasks,onSave,onBack,onNotifications,themePreference,onThemeChange}:Props){
   const { user, isValid, logout } = useAuth() as any
   const [draft,setDraft]=useState<StudentProfile>({...settings.profile})
+  const [loggingOut,setLoggingOut]=useState(false)
   const [message,setMessage]=useState('')
   const [busy,setBusy]=useState(false)
   const importRef=useRef<HTMLInputElement>(null)
@@ -170,7 +171,7 @@ export function ProfileSettingsPage({settings,tasks,onSave,onBack,onNotification
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SyncStatus />
-          {isValid && <button type="button" onClick={() => void logout()} className="rounded-xl border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft transition hover:bg-canvas hover:text-ink">Deconectare</button>}
+          {isValid && <button type="button" disabled={loggingOut} onClick={() => { setLoggingOut(true); void logout() }} className="rounded-xl border border-line px-3 py-1.5 text-xs font-semibold text-ink-soft transition hover:bg-canvas hover:text-ink disabled:opacity-60">{loggingOut ? 'Se deconectează…' : 'Deconectare'}</button>}
         </div>
       </div>
     </section>

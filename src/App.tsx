@@ -482,7 +482,7 @@ export default function App() {
     window.scrollTo({ top: 0 })
   }, [location.pathname, navigateTo])
   useEffect(() => { window.scrollTo({ top: 0 }) }, [location.pathname])
-  const { user: authUser, isValid: isLoggedIn, isLoading: authLoading } = useAuth()
+  const { user: authUser, isValid: isLoggedIn, isLoading: authLoading, logout } = useAuth()
   const isAuthPage = page === 'auth-login' || page === 'auth-register'
   useEffect(() => {
     if (authLoading) return
@@ -791,6 +791,7 @@ export default function App() {
         onNavigate={navigate}
         onAdd={() => setSheetOpen(true)}
         onProfile={() => navigate('profile')}
+        onLogout={() => void logout()}
       >
         {dataWarning && <div role="status" className="mb-5 rounded-2xl border border-warning/35 bg-warning/10 px-4 py-3 text-sm text-warning">{dataWarning}</div>}
         <ErrorBoundary key={location.pathname} label={pageTitles[page]}>

@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { LogOut, Plus } from 'lucide-react'
 import { initialsFor, type UserSettings } from '../../profileModel'
 import { primaryNav, type PageId } from '../../lib/navigation'
 import { cn } from '../../lib/cn'
@@ -10,9 +11,11 @@ type Props = {
   onNavigate: (page: PageId) => void
   onAdd: () => void
   onProfile: () => void
+  onLogout: () => void
 }
 
-export function AppSidebar({ page, user, onNavigate, onAdd, onProfile }: Props) {
+export function AppSidebar({ page, user, onNavigate, onAdd, onProfile, onLogout }: Props) {
+  const [loggingOut, setLoggingOut] = useState(false)
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-[268px] flex-col border-r border-line bg-surface/70 px-4 py-5 backdrop-blur-2xl lg:flex">
       <Link
@@ -81,6 +84,16 @@ export function AppSidebar({ page, user, onNavigate, onAdd, onProfile }: Props) 
               {user.specialization ? ` · ${user.specialization}` : ''}
             </span>
           </span>
+        </button>
+        <button
+          type="button"
+          onClick={() => { if (!loggingOut) { setLoggingOut(true); onLogout() } }}
+          disabled={loggingOut}
+          aria-label="Deconectare"
+          className="pressable mt-2 flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-left text-[13px] font-medium text-ink-soft hover:bg-ink/[0.045] hover:text-ink disabled:opacity-60"
+        >
+          <LogOut className="size-[17px] text-ink-faint" strokeWidth={1.9} />
+          {loggingOut ? 'Se deconectează…' : 'Deconectare'}
         </button>
       </div>
     </aside>

@@ -7,6 +7,7 @@ import App from './App'
 vi.mock('./PdfReader', () => ({ PdfReader: () => null }))
 
 const mockAuthState = vi.hoisted(() => ({ isValid: true, isLoading: false }))
+const mockLogout = vi.hoisted(() => vi.fn())
 
 vi.mock('./auth/AuthContext', () => ({
   AuthProvider: ({ children }: { children: unknown }) => <>{children as never}</>,
@@ -17,7 +18,7 @@ vi.mock('./auth/AuthContext', () => ({
     isLoading: mockAuthState.isLoading,
     login: vi.fn(),
     register: vi.fn(),
-    logout: vi.fn(),
+    logout: mockLogout,
     refresh: vi.fn(),
   }),
 }))
@@ -55,14 +56,22 @@ describe('App routes', () => {
     expect(await screen.findByRole('heading', { name: 'Profil și setări', level: 1 })).toBeInTheDocument()
   })
 
-  it('shows the login page when logged out', async () => {
-    mockAuthState.isValid = false
+  it('shows the login page when logged out', async () => {    mockAuthState.isValid = false
     try {
       renderApp()
       expect(await screen.findByRole('heading', { name: 'Conectare' })).toBeInTheDocument()
     } finally {
       mockAuthState.isValid = true
     }
+  })
+
+  it('logs out from the sidebar button', async () => {
+    const user = userEvent.setup()
+    renderApp()
+    await screen.findByText('Orele de astăzi')
+
+    await user.click(screen.getByRole('button', { name: 'Deconectare', hidden: true }))
+    expect(mockLogout).toHaveBeenCalled()
   })
 
   it('applies and updates the theme preference', async () => {
