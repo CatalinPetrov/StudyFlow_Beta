@@ -1,6 +1,9 @@
 import PocketBase from 'pocketbase'
 
-const url = (import.meta.env.VITE_PB_URL as string) || 'http://127.0.0.1:8090'
+const envUrl = import.meta.env.VITE_PB_URL as string | undefined
+// Fără VITE_PB_URL, același origin ca pagina (Vite proxiază /api spre PocketBase).
+// Niciun port separat, niciun CORS, nicio regulă de firewall pentru telefoanele din LAN.
+const url = envUrl || window.location.origin
 
 export const pb = new PocketBase(url)
 pb.autoCancellation(false)

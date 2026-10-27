@@ -75,6 +75,9 @@ export default defineConfig({
     port: Number(process.env.PORT || 5173),
     // PocketBase scrie în pb_data/ la fiecare request; fără asta Vite reîncarcă pagina la fiecare scriere.
     watch: { ignored: ['**/pb_data/**', '**/dist/**', '**/test_sync.sqlite*'] },
+    // Backendul pe același origin/port ca frontendul: telefoanele din LAN ajung
+    // la /api prin Vite, fără port separat, firewall sau CORS.
+    proxy: { '/api': { target: 'http://127.0.0.1:8090', changeOrigin: true } },
   },
   preview: {
     host: true,
